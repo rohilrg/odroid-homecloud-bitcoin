@@ -16,25 +16,46 @@ from time import sleep
 from PIL import ImageFont, ImageDraw, Image
 import time
 import datetime
+import asyncio
+from bitcoinrpc import BitcoinRPC
 
 serial = i2c(port=0, address=0x3C)
 # device = sh1106(serial, rotate=0)
 device = ssd1306(serial, rotate=2)
+event_loop = asyncio.get_event_loop()
 
 def main():
-    today_last_time = "Unknown"
+    event_loop.run_until_complete(loop())
+
+async def loop():
+    blocks_last_time = "Unknown"
+    rpc = BitcoinRPC("127.0.0.1", 8332, "rpchost", "rpcpassword")
+
     while True:
-        now = datetime.datetime.now()
-        today_date = now.strftime("%d %b %y")
-        today_time = now.strftime("%H:%M")
-        if today_time != today_last_time:
-            today_last_time = today_time
+        try:
+            bci = await rpc.getblockchaininfo()
+        except Exception:
+            continue
+
+        blocks = 'block ' + str(bci['blocks'])
+
+        if (bci['initialblockdownload']):
+            sync = 'ibd ' + str(round(bci['verificationprogress'] * 100, 2)) + '%'
+
+        size = "{:.2f}".format(bci['size_on_disk'] / 1024 / 1024 / 1024) + ' GB'
+
+        mediantime = datetime.datetime.utcfromtimestamp(bci['mediantime']).strftime('%Y-%m-%d')
+
+        if blocks != blocks_last_time:
+            blocks_last_time = blocks
             with canvas(device) as draw:
-                  font = ImageFont.truetype('/usr/share/fonts/truetype/dseg/DSEG7Modern-Bold.ttf', 36)
-                  draw.text((0, 27), today_time, font=font, fill=1)
-                  font = ImageFont.truetype('/usr/share/fonts/truetype/dseg/DSEG7Modern-Bold.ttf', 20)
-                  draw.text((0, 0), today_date, font=font, fill=1)
-        time.sleep(0.1)
+                  font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf', 15)
+                  draw.text((0, 2), blocks, font=font, fill=1)
+                  draw.text((0, 18), sync, font=font, fill=1)
+                  draw.text((0, 34), mediantime, font=font, fill=1)
+                  draw.text((0, 50), size, font=font, fill=1)
+
+        time.sleep(1)
 
 if __name__ == "__main__":
     try:
