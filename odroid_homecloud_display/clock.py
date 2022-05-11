@@ -42,6 +42,8 @@ async def loop():
 
         if (bci['initialblockdownload']):
             sync = 'ibd ' + str(round(bci['verificationprogress'] * 100, 2)) + '%'
+        else:
+            sync = '100%'
 
         size = "{:.2f}".format(bci['size_on_disk'] / 1024 / 1024 / 1024) + ' GB'
 
