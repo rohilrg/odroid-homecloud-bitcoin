@@ -12,6 +12,7 @@ setup(
             'luma.oled >= 3.6.0',
             'luma.lcd >= 2.5.0',
             'bitcoinrpc >= 0.3.1',
+            'requests >= 2.27.1'
             ],
         packages = [
             'odroid_homecloud_display'

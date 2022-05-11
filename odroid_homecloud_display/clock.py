@@ -13,6 +13,7 @@ from luma.core.interface.serial import i2c
 from luma.core.render import canvas
 from luma.oled.device import ssd1306, ssd1325, ssd1331, sh1106
 from time import sleep
+import requests
 from PIL import ImageFont, ImageDraw, Image
 import time
 import datetime
@@ -37,14 +38,22 @@ async def loop():
         except Exception:
             continue
 
-        blocks = 'block ' + str(bci['blocks'])
+        blocks = 'block:' + str(bci['blocks'])
 
         if (bci['initialblockdownload']):
             sync = 'ibd ' + str(round(bci['verificationprogress'] * 100, 2)) + '%'
 
         size = "{:.2f}".format(bci['size_on_disk'] / 1024 / 1024 / 1024) + ' GB'
 
-        mediantime = datetime.datetime.utcfromtimestamp(bci['mediantime']).strftime('%Y-%m-%d')
+        # mediantime = datetime.datetime.utcfromtimestamp(bci['mediantime']).strftime('%Y-%m-%d')
+
+        # defining key/request url
+        key = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
+
+        # requesting data from url
+        data = requests.get(key)
+        data = data.json()
+        price = '1SAT:' + format(1/data['price'], '.6f') + '$'
 
         if blocks != blocks_last_time:
             blocks_last_time = blocks
@@ -52,7 +61,7 @@ async def loop():
                   font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf', 15)
                   draw.text((0, 2), blocks, font=font, fill=1)
                   draw.text((0, 18), sync, font=font, fill=1)
-                  draw.text((0, 34), mediantime, font=font, fill=1)
+                  draw.text((0, 34), price, font=font, fill=1)
                   draw.text((0, 50), size, font=font, fill=1)
 
         time.sleep(1)
